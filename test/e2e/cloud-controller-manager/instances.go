@@ -24,7 +24,7 @@ import (
 	"k8s.io/api/core/v1"
 	apitypes "k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/cloudprovider"
+	"k8s.io/cloud-provider"
 )
 
 func assertNodeAddressesContainValidIPs(addrs []v1.NodeAddress) {
@@ -56,7 +56,7 @@ var _ = Describe("Instances", func() {
 	})
 
 	It("should be possible to get node addresses", func() {
-		nodeName := apitypes.NodeName(node.Name)
+		nodeName := apitypes.NodeName(node.Labels["hostname"])
 		Expect(nodeName).NotTo(BeEmpty())
 
 		By("calling NodeAddresses()")
@@ -80,7 +80,7 @@ var _ = Describe("Instances", func() {
 	})
 
 	It("should be possible to get the provider ID of an instance", func() {
-		nodeName := apitypes.NodeName(node.Name)
+		nodeName := apitypes.NodeName(node.Labels["hostname"])
 		Expect(nodeName).NotTo(BeEmpty())
 
 		By("calling InstanceID()")
@@ -91,7 +91,7 @@ var _ = Describe("Instances", func() {
 	})
 
 	It("should be possible to get the type of an instance", func() {
-		nodeName := apitypes.NodeName(node.Name)
+		nodeName := apitypes.NodeName(node.Labels["hostname"])
 		Expect(nodeName).NotTo(BeEmpty())
 
 		By("calling InstanceType()")

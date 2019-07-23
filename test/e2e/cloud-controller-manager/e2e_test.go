@@ -25,16 +25,13 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/test/e2e/cloud-controller-manager/framework"
 	sharedfw "github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
 	"github.com/oracle/oci-cloud-controller-manager/test/e2e/framework/ginkgowrapper"
-	"k8s.io/apiserver/pkg/util/logs"
+	"k8s.io/component-base/logs"
 )
 
 var lockAquired bool
-var installDisabled bool
+var installEnabled bool
 
 var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
-	version := os.Getenv("VERSION")
-	Ω(version).ShouldNot(BeEmpty(), "$VERSION must be set")
-
 	cs, err := framework.NewClientSetFromFlags()
 	Ω(err).ShouldNot(HaveOccurred())
 
@@ -43,8 +40,10 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 
 	lockAquired = true
 
-	_, installDisabled = os.LookupEnv("INSTALL_DISABLED")
-	if !installDisabled {
+	_, installEnabled = os.LookupEnv("INSTALL_ENABLED")
+	if installEnabled {
+		version := os.Getenv("VERSION")
+		Ω(version).ShouldNot(BeEmpty(), "$VERSION must be set")
 		err = framework.InstallCCM(cs, version)
 		Ω(err).ShouldNot(HaveOccurred())
 	}
@@ -66,7 +65,7 @@ var _ = ginkgo.SynchronizedAfterSuite(func() {
 
 	// Only delete resources if we aquired the lock and deployed them in the
 	// first place.
-	if lockAquired && !installDisabled {
+	if lockAquired && installEnabled {
 		cs, err := framework.NewClientSetFromFlags()
 		Ω(err).ShouldNot(HaveOccurred())
 

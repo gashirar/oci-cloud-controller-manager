@@ -23,7 +23,7 @@ import (
 	"k8s.io/api/core/v1"
 	apitypes "k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/cloudprovider"
+	"k8s.io/cloud-provider"
 )
 
 var _ = Describe("Zones", func() {
@@ -59,7 +59,7 @@ var _ = Describe("Zones", func() {
 	})
 
 	It("should be possible to get a non-empty zone by node name", func() {
-		nodeName := apitypes.NodeName(node.Name)
+		nodeName := apitypes.NodeName(node.Labels["hostname"])
 		Expect(nodeName).NotTo(BeEmpty())
 
 		By("calling GetZoneByNodeName()")

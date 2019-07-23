@@ -14,6 +14,7 @@
 
 PKG := github.com/oracle/oci-cloud-controller-manager
 IMAGE ?= iad.ocir.io/oracle/cloud-provider-oci
+COMPONENT ?= oci-cloud-controller-manager oci-volume-provisioner oci-flexvolume-driver cloud-provider-oci
 
 BUILD := $(shell git describe --exact-match 2> /dev/null || git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 # Allow overriding for release versions else just equal the build (git hash)
@@ -57,30 +58,11 @@ check: gofmt govet golint
 build-dirs:
 	@mkdir -p dist/
 
-.PHONY: oci-cloud-controller-manager
-oci-cloud-controller-manager: build-dirs
-	@GOOS=$(GOOS) GOARCH=$(ARCH) go build                          \
-	  -o dist/oci-cloud-controller-manager                         \
-	  -installsuffix "static"                                      \
-	  -ldflags "-X main.version=$(VERSION) -X main.build=$(BUILD)" \
-	  ./cmd/oci-cloud-controller-manager
-
-.PHONY: oci-volume-provisioner
-oci-volume-provisioner: build-dirs
-	@GOOS=$(GOOS) GOARCH=$(ARCH) CGO_ENABLED=0 go build                                      \
-	  -o dist/oci-volume-provisioner                                                         \
-	  -ldflags="-s -w -X main.version=${VERSION} -X main.build=${BUILD} -extldflags -static" \
-	  ./cmd/oci-volume-provisioner
-
-.PHONY: oci-flexvolume-driver
-oci-flexvolume-driver: build-dirs
-	@GOOS=$(GOOS) GOARCH=$(ARCH) CGO_ENABLED=0 go build                  \
-	  -o dist/oci-flexvolume-driver                                      \
-	  -ldflags="-s -w -X main.version=$(VERSION) -X main.build=$(BUILD)" \
-	  ./cmd/oci-flexvolume-driver/
-
 .PHONY: build
-build: oci-cloud-controller-manager oci-volume-provisioner oci-flexvolume-driver
+build: build-dirs
+	@for component in $(COMPONENT); do \
+		GOOS=$(GOOS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o dist/$$component -ldflags "-X main.version=$(VERSION) -X main.build=$(BUILD)" ./cmd/$$component ; \
+    done
 
 .PHONY: manifests
 manifests: build-dirs
@@ -88,6 +70,10 @@ manifests: build-dirs
 	@sed $(SED_INPLACE)                         \
 	  's#${IMAGE}:latest#${IMAGE}:${VERSION}#g' \
 	  dist/*.yaml
+
+.PHONY: vendor
+vendor:
+	@GO111MODULE=on go mod vendor -v
 
 .PHONY: test
 test:
@@ -131,6 +117,25 @@ run-volume-provisioner-dev:
 	    --kubeconfig=$(KUBECONFIG)                    \
 	    -v=4
 
+.PHONY: image
+BUILD_ARGS = --build-arg COMPONENT="$(COMPONENT)"
+image:
+	docker  build $(BUILD_ARGS) \
+		-t $(IMAGE):$(VERSION) .
+
+.PHONY: push
+push: image
+	docker push $(IMAGE):$(VERSION)
+
 .PHONY: version
 version:
 	@echo $(VERSION)
+
+.PHONY: build-local
+build-local: build
+
+.PHONY: run-ccm-e2e-tests
+run-ccm-e2e-tests:
+	ginkgo -v -progress test/e2e/cloud-controller-manager -- \
+        --kubeconfig=$(KUBECONFIG) \
+        --cloud-config=$(CLOUDCONFIG)

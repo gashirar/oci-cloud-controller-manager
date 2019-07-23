@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	utilpointer "k8s.io/kubernetes/pkg/util/pointer"
+	utilpointer "k8s.io/utils/pointer"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 )
@@ -45,11 +45,13 @@ const (
 	AD                 = "AD"
 	KubeSystemNS       = "kube-system"
 	ClassOCI           = "oci"
+	ClassOCICSI        = "oci-bv"
 	ClassOCIExt3       = "oci-ext3"
 	ClassOCINoParamFss = "oci-fss-noparam"
 	ClassOCIMntFss     = "oci-fss-mnt"
 	ClassOCISubnetFss  = "oci-fss-subnet"
 	MinVolumeBlock     = "50Gi"
+	MaxVolumeBlock     = "100Gi"
 	VolumeFss          = "1Gi"
 	FSSProv            = "oci-volume-provisioner-fss"
 	OCIProv            = "oci-volume-provisioner"
