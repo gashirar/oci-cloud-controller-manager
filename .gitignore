@@ -9,6 +9,7 @@ dist/
 .dockerfile-amd64
 bin/
 .wercker
+vendor/*
 
 # Binaries for programs and plugins
 *.exe
